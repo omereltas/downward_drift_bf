@@ -1,19 +1,4 @@
-# =============================================================================
-# Downward Prior Drift in Sequential Bayes Factor Designs
-# Monte Carlo Simulation Engine
-#
-# Dosya : 01_sim_engine.R
-# Çalıştır: source("01_sim_engine.R")
-#           sim_data    <- run_all_simulations(GRID, SIM_PARAMS)
-#           error_rates <- compute_error_rates(sim_data)
-#           saveRDS(error_rates, "results/error_rates.rds")
-#
-# Not: Bu simülasyon aşağı yönlü prior drift'i inceler.
-#      Prior ölçeği r₀'dan başlayıp Δr kadar DARALIR (r₀ - drift).
-#      Geçersiz kombinasyonlar (r - Δr < 0.1) ızgaradan çıkarılmıştır.
-# =============================================================================
 
-# ---- 0. Paket yönetimi -------------------------------------------------------
 required_pkgs <- c("BayesFactor", "doParallel", "foreach", "dplyr", "ggplot2", "scales")
 
 missing_pkgs <- required_pkgs[!sapply(required_pkgs, requireNamespace, quietly = TRUE)]
@@ -31,12 +16,12 @@ suppressPackageStartupMessages({
   library(scales)
 })
 
-# ---- 1. Dizin yapisi ---------------------------------------------------------
+# ---- 1. Design ---------------------------------------------------------
 for (d in c("results", "results/checkpoints", "figures", "tables")) {
   dir.create(d, showWarnings = FALSE, recursive = TRUE)
 }
 
-# ---- 2. Simulasyon parametreleri ---------------------------------------------
+# ---- 2. Simulation parameters ---------------------------------------------
 SIM_PARAMS <- list(
   true_delta      = c(0, 0.2, 0.5),       # 0.8 cikarildi (tavan etkisi)
   prior_r0        = c(0.3, 0.5, 0.707),
@@ -52,7 +37,7 @@ SIM_PARAMS <- list(
   r_min           = 0.1    # prior olcegi alt siniri
 )
 
-# ---- 3. Parametre izgara -----------------------------------------------------
+# ---- 3.  -----------------------------------------------------
 build_grid <- function(p) {
   grid <- expand.grid(
     true_delta      = p$true_delta,
@@ -86,10 +71,8 @@ message(sprintf("Toplam kosul sayisi: %d", nrow(GRID)))
 message("Izgara ozeti:")
 print(table(GRID$prior_r0, GRID$drift_magnitude))
 
-# ---- 4. Asagi yonlu prior drift fonksiyonu -----------------------------------
-# YUKARI yonlu drift: r(n) = r0 + drift
-# ASAGI yonlu drift: r(n) = r0 - drift
-# Alt sinir: r_min = 0.1
+# ---- 4.  -----------------------------------
+
 compute_drifted_prior_down <- function(n_current, r0, magnitude, speed, type,
                                        r_min = 0.1) {
   if (magnitude == 0 || type == "none" || is.infinite(speed)) return(r0)
@@ -109,7 +92,7 @@ compute_drifted_prior_down <- function(n_current, r0, magnitude, speed, type,
   max(r_min, min(new_r, 2.0))          # [r_min, 2.0] araliginda tut
 }
 
-# ---- 5. Tek kosul simulatoru -------------------------------------------------
+# ---- 5.  -------------------------------------------------
 simulate_condition <- function(true_delta, prior_r0,
                                drift_magnitude, drift_speed, drift_type,
                                K, n_min, n_max, bf_upper, bf_lower,
@@ -181,7 +164,7 @@ simulate_condition <- function(true_delta, prior_r0,
   )
 }
 
-# ---- 6. Ana simulasyon dongusu (paralel + checkpoint) -----------------------
+# ---- 6.  (parallel + checkpoint) -----------------------
 run_all_simulations <- function(grid, params, n_cores = NULL) {
 
   if (is.null(n_cores)) {
@@ -255,7 +238,7 @@ run_all_simulations <- function(grid, params, n_cores = NULL) {
   merge_checkpoints()
 }
 
-# ---- 7. Checkpoint birlestirici ---------------------------------------------
+# ---- 7. ---------------------------------------------
 merge_checkpoints <- function() {
   cp_files <- list.files("results/checkpoints",
                           pattern = "^checkpoint_\\d+\\.rds$",
@@ -267,7 +250,7 @@ merge_checkpoints <- function() {
   combined
 }
 
-# ---- 8. Hata orani ozetleyici -----------------------------------------------
+# ---- 8. -----------------------------------------------
 compute_error_rates <- function(sim_data) {
   sim_data %>%
     group_by(condition_id, true_delta, prior_r0,
