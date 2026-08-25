@@ -1,9 +1,3 @@
-# =============================================================================
-# Downward Prior Drift — BF Threshold Calibration
-# Paralel + Erken Durdurma + Checkpoint
-# Dosya : 03_adaptive_threshold.R
-# Bagimlilik: 01_sim_engine.R source edilmis olmali
-# =============================================================================
 
 if (!exists("compute_drifted_prior_down")) {
   message("01_sim_engine.R yukleniyor...")
@@ -23,7 +17,7 @@ for (d in c("results", "results/calib_checkpoints", "figures", "tables")) {
   dir.create(d, showWarnings = FALSE, recursive = TRUE)
 }
 
-# ---- 1. Tip I hata tahmincisi -----------------------------------------------
+# ---- 1. Type I error -----------------------------------------------
 estimate_typeI_down <- function(bf_upper, prior_r0, drift_magnitude,
                                 drift_speed, drift_type,
                                 n_min = 20, n_max = 500,
@@ -51,7 +45,7 @@ estimate_typeI_down <- function(bf_upper, prior_r0, drift_magnitude,
   h1_decisions / K
 }
 
-# ---- 2. Ikili arama (erken durdurma ile) ------------------------------------
+# ---- 2.  ------------------------------------
 find_calibrated_threshold_down <- function(prior_r0, drift_magnitude,
                                            drift_speed, drift_type,
                                            target_alpha   = 0.05,
@@ -105,7 +99,7 @@ find_calibrated_threshold_down <- function(prior_r0, drift_magnitude,
        stop_reason    = stop_reason)
 }
 
-# ---- 3. Kalibrasyon izgara ---------------------------------------------------
+# ---- 3. Calibration grid ---------------------------------------------------
 calib_grid <- expand.grid(
   prior_r0        = c(0.3, 0.5, 0.707),
   drift_magnitude = c(0, 0.1, 0.3, 0.6),
@@ -199,7 +193,7 @@ if (length(todo_ids) == 0) {
   message("Paralel kalibrasyon tamamlandi.")
 }
 
-# ---- 5. Checkpoint'leri birlestir -------------------------------------------
+# ---- 5.  -------------------------------------------
 cp_files <- list.files("results/calib_checkpoints",
                         pattern = "^calib_\\d+\\.rds$",
                         full.names = TRUE)
@@ -218,7 +212,7 @@ message(sprintf("Iterasyon: ort=%.1f, min=%d, max=%d",
                 min(calib_df$n_iter),
                 max(calib_df$n_iter)))
 
-# ---- 6. Baseline ve CF hesapla ----------------------------------------------
+# ---- 6. Baseline and CF  ----------------------------------------------
 baseline <- calib_df %>%
   filter(drift_magnitude == 0) %>%
   select(prior_r0, baseline_bf = bf_threshold)
@@ -231,7 +225,7 @@ write.csv(calib_df, "tables/table3_calibrated_thresholds_downward.csv",
           row.names = FALSE)
 message("Tablo 3 -> tables/table3_calibrated_thresholds_downward.csv")
 
-# ---- 7. Parametrik formul fit -----------------------------------------------
+# ---- 7.  -----------------------------------------------
 fit_df <- calib_df %>%
   filter(drift_magnitude > 0, is.finite(drift_speed)) %>%
   mutate(
@@ -254,7 +248,7 @@ if (nrow(fit_df) >= 4) {
   saveRDS(lm_fit, "results/correction_model_downward.rds")
 }
 
-# ---- 8. Figure 4: Kalibrasyon egrisi ----------------------------------------
+# ---- 8. Figure 3: Calibration line ----------------------------------------
 plot_df <- calib_df %>%
   filter(drift_magnitude > 0, is.finite(drift_speed)) %>%
   mutate(speed_label = factor(as.character(drift_speed), levels = c("10","50")))
@@ -302,10 +296,10 @@ if (nrow(plot_df) > 0) {
           strip.background = element_rect(fill = "gray95"),
           panel.grid.minor = element_blank())
 
-  ggsave("figures/fig4_calibration_downward.pdf", p4, width = 8, height = 5.5)
-  ggsave("figures/fig4_calibration_downward.png", p4, width = 8, height = 5.5,
+  ggsave("figures/fig3_calibration_downward.pdf", p4, width = 8, height = 5.5)
+  ggsave("figures/fig3_calibration_downward.png", p4, width = 8, height = 5.5,
          dpi = 300)
-  message("Figure 4 kaydedildi.")
+  message("Figure 3 kaydedildi.")
 }
 
 message("=== 03_adaptive_threshold.R tamamlandi ===")
