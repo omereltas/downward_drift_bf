@@ -14,7 +14,7 @@ for (d in c("results", "figures", "tables")) {
   dir.create(d, showWarnings = FALSE, recursive = TRUE)
 }
 
-# ---- 1. Veri yukle -----------------------------------------------------------
+# ---- 1. -----------------------------------------------------------
 find_rds <- function(filename) {
   candidates <- c(file.path("results", filename), filename)
   found <- candidates[file.exists(candidates)]
@@ -26,7 +26,7 @@ er  <- readRDS(find_rds("error_rates.rds"))
 sim <- readRDS(find_rds("all_simulations.rds"))
 message(sprintf("Veri yuklendi: %d kosul, %d satir.", nrow(er), nrow(sim)))
 
-# ---- 2. Etiketler ve renkler ------------------------------------------------
+# ---- 2. ------------------------------------------------
 COLS <- c(
   "none"    = "#2C7BB6",
   "gradual" = "#D7191C",
@@ -46,7 +46,7 @@ er <- er %>%
                          sprintf("speed = %g", drift_speed))
   )
 
-# ---- 3. Figure 1: Type I hata ~ drift buyuklugu ----------------------------
+# ---- 3. Figure 1: ----------------------------
 fig1_data <- er %>%
   filter(true_delta == 0, !is.na(type_I_error)) %>%
   filter(drift_magnitude == 0 | drift_type %in% c("gradual", "sudden"))
@@ -89,7 +89,7 @@ ggsave("figures/fig1_typeI_downward.pdf", p1, width = 8, height = 5.5)
 ggsave("figures/fig1_typeI_downward.png", p1, width = 8, height = 5.5, dpi = 300)
 message("Figure 1 kaydedildi.")
 
-# ---- 4. Figure 2: Guc ~ drift buyuklugu -------------------------------------
+# ---- 4. Figure 2: -------------------------------------
 fig2_data <- er %>%
   filter(true_delta > 0, !is.na(power)) %>%
   filter(drift_magnitude == 0 | drift_type %in% c("gradual", "sudden"))
@@ -129,11 +129,6 @@ ggsave("figures/fig2_power_downward.pdf", p2, width = 9, height = 7)
 ggsave("figures/fig2_power_downward.png", p2, width = 9, height = 7, dpi = 300)
 message("Figure 2 kaydedildi.")
 
-# ---- 5. Figure 3: Tip I karsilastirma - upward vs downward ------------------
-# Bu figur icin upward drift sonuclarini da yukleyin:
-# upward_er <- readRDS("../upward_drift_sim/results/error_rates.rds")
-# Simdilik placeholder - upward sim tamamlaninca aktif edin
-message("Figure 3 (upward vs downward karsilastirma) upward sim bittikten sonra uretilecek.")
 
 # ---- 6. Tablo 1: Hata oranlari (r0 = 0.707) ---------------------------------
 tbl1 <- er %>%
